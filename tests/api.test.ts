@@ -23,6 +23,19 @@ describe("feedback API", () => {
       .expect(200, { status: "ready" });
   });
 
+  it("does not cache or return a body for HEAD health probes", async () => {
+    const app = createApp({
+      storage: new InMemoryFeedbackStorage(),
+      logger: silentLogger,
+    });
+
+    const response = await request(app)
+      .head("/health")
+      .expect("Cache-Control", "no-store")
+      .expect(200);
+    expect(response.text).toBe("");
+  });
+
   it("returns 503 when storage is unavailable", async () => {
     const storage = new InMemoryFeedbackStorage();
     storage.checkHealth = () => Promise.reject(new Error("secret details"));
