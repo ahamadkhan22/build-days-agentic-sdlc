@@ -33,7 +33,7 @@ describe("feedback API", () => {
       .head("/health")
       .expect("Cache-Control", "no-store")
       .expect(200);
-    expect(response.text).toBe("");
+    expect(response.text ?? "").toBe("");
   });
 
   it("returns 503 when storage is unavailable", async () => {
