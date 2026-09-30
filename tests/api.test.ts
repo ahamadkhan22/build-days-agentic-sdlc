@@ -13,8 +13,27 @@ describe("feedback API", () => {
     const storage = new InMemoryFeedbackStorage();
     const app = createApp({ storage, logger: silentLogger });
 
-    await request(app).get("/health").expect(200, { status: "healthy" });
-    await request(app).get("/ready").expect(200, { status: "ready" });
+    await request(app)
+      .get("/health")
+      .expect("Cache-Control", "no-store")
+      .expect(200, { status: "healthy" });
+    await request(app)
+      .get("/ready")
+      .expect("Cache-Control", "no-store")
+      .expect(200, { status: "ready" });
+  });
+
+  it("does not cache or return a body for HEAD health probes", async () => {
+    const app = createApp({
+      storage: new InMemoryFeedbackStorage(),
+      logger: silentLogger,
+    });
+
+    const response = await request(app)
+      .head("/health")
+      .expect("Cache-Control", "no-store")
+      .expect(200);
+    expect(response.text ?? "").toBe("");
   });
 
   it("returns 503 when storage is unavailable", async () => {
@@ -22,7 +41,10 @@ describe("feedback API", () => {
     storage.checkHealth = () => Promise.reject(new Error("secret details"));
     const app = createApp({ storage, logger: silentLogger });
 
-    const response = await request(app).get("/ready").expect(503);
+    const response = await request(app)
+      .get("/ready")
+      .expect("Cache-Control", "no-store")
+      .expect(503);
     expect(response.text).not.toContain("secret details");
     expect(response.body.error.code).toBe("STORAGE_UNAVAILABLE");
   });

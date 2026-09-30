@@ -67,21 +67,24 @@ export const createApp = ({
   );
 
   app.get("/health", (_request, response) => {
-    response.json({ status: "healthy" });
+    response.set("Cache-Control", "no-store").json({ status: "healthy" });
   });
 
   app.get("/ready", async (_request, response) => {
     try {
       await storage.checkHealth();
-      response.json({ status: "ready" });
+      response.set("Cache-Control", "no-store").json({ status: "ready" });
     } catch (error) {
       logger.log("error", "readiness_failed", {
         error: error instanceof Error ? error.message : "Unknown storage error",
       });
-      response.status(503).json({
-        status: "not_ready",
-        error: { code: "STORAGE_UNAVAILABLE", message: "Storage is unavailable." },
-      });
+      response
+        .status(503)
+        .set("Cache-Control", "no-store")
+        .json({
+          status: "not_ready",
+          error: { code: "STORAGE_UNAVAILABLE", message: "Storage is unavailable." },
+        });
     }
   });
 
